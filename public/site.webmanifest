@@ -1,0 +1,16 @@
+{
+  "name": "RemixKit",
+  "short_name": "RemixKit",
+  "description": "AI image editing prompt directory for photography, design, and creative image generation.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#7c3aed",
+  "icons": [
+    {
+      "src": "/icon.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ]
+}
