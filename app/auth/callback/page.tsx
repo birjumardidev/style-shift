@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState } from "react";
 import { Loader2, Wand2 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { authCallbackPath } from "@/lib/auth-config";
 
 function AuthCallbackContent() {
   const router = useRouter();
@@ -34,7 +35,7 @@ function AuthCallbackContent() {
       const safeNext =
         next?.startsWith("/") && !next.startsWith("//") ? next : "/reframe";
       sessionStorage.removeItem("auth-return-to");
-      if (!cancelled) router.replace(safeNext);
+      if (!cancelled) router.replace(safeNext || authCallbackPath);
     }
     completeSignIn();
     return () => {

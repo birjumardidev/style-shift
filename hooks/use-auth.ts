@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
+import { getAuthRedirectUrl } from "@/lib/auth-config";
 import type { User } from "@supabase/supabase-js";
 
 export function useAuth() {
@@ -59,7 +60,7 @@ export function useAuth() {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
+        redirectTo: getAuthRedirectUrl(next),
       },
     });
     if (error) {
