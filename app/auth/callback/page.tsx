@@ -28,7 +28,13 @@ function AuthCallbackContent() {
           return;
         }
       }
-      if (!cancelled) router.replace(searchParams.get("next") || "/reframe");
+      const queryNext = searchParams.get("next");
+      const storedNext = sessionStorage.getItem("auth-return-to");
+      const next = queryNext || storedNext;
+      const safeNext =
+        next?.startsWith("/") && !next.startsWith("//") ? next : "/reframe";
+      sessionStorage.removeItem("auth-return-to");
+      if (!cancelled) router.replace(safeNext);
     }
     completeSignIn();
     return () => {

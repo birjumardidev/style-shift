@@ -95,7 +95,7 @@ export default function HomePage() {
                   className="inline-flex items-center justify-center gap-2 rounded-full border border-neutral-200 bg-white px-6 py-3 text-sm font-semibold text-neutral-700 shadow-sm transition-all duration-200 hover:border-neutral-300 hover:bg-neutral-50 active:scale-[0.98] lg:px-8 lg:py-4 lg:text-base lg:font-bold"
                 >
                   <Wand2 className="h-4 w-4 lg:h-5 lg:w-5" />
-                  Try StyleShift
+                  Try Reframe
                 </Link>
               </div>
             </div>

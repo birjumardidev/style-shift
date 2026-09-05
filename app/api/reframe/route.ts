@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAuthenticatedUser, getSupabaseAdmin } from "@/lib/supabase-admin";
+import { rateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -15,6 +16,25 @@ function error(message: string, status = 400) {
 
 function dataUrl(file: File, bytes: Buffer) {
   return `data:${file.type};base64,${bytes.toString("base64")}`;
+}
+
+function isMissingCreditFunction(error: { code?: string; message?: string }) {
+  return (
+    error.code === "42883" ||
+    error.message?.toLowerCase().includes("does not exist") ||
+    error.message?.toLowerCase().includes("could not find the function")
+  );
+}
+
+async function updateCredit(operation: "reserve" | "refund", userId: string) {
+  const admin = getSupabaseAdmin();
+  const currentName = `${operation}_reframe_credit`;
+  const legacyName = `${operation}_styleshift_credit`;
+  let result = await admin.rpc(currentName, { target_user_id: userId });
+  if (result.error && isMissingCreditFunction(result.error)) {
+    result = await admin.rpc(legacyName, { target_user_id: userId });
+  }
+  return result;
 }
 
 async function describeReference(
@@ -45,6 +65,7 @@ async function describeReference(
       Authorization: `Key ${key}`,
       "Content-Type": "application/json",
     },
+    signal: AbortSignal.timeout(45_000),
     body: JSON.stringify({
       image_urls: [
         dataUrl(reference, Buffer.from(await reference.arrayBuffer())),
@@ -82,6 +103,7 @@ async function createImageEdit(original: File, prompt: string) {
       Authorization: `Key ${key}`,
       "Content-Type": "application/json",
     },
+    signal: AbortSignal.timeout(45_000),
     body: JSON.stringify({
       prompt: `${prompt}\n\nKeep all other unmentioned details and subject facial identity intact.`,
       image_urls: [
@@ -104,19 +126,18 @@ export async function POST(request: Request) {
   let reservedUserId: string | null = null;
   try {
     const user = await getAuthenticatedUser(request);
-    if (!user) return error("Please sign in to use StyleShift.", 401);
-    reservedUserId = user.id;
-    const admin = getSupabaseAdmin();
-    const { error: reserveError } = await admin.rpc(
-      "reserve_styleshift_credit",
-      { target_user_id: user.id },
-    );
-    if (reserveError)
+    if (!user) return error("Please sign in to use Reframe.", 401);
+    const limit = rateLimit(`reframe:${user.id}`, 5, 10 * 60 * 1000);
+    if (!limit.allowed)
+      return NextResponse.json(
+        { error: "Too many Reframe attempts. Please try again shortly." },
+        { status: 429, headers: { "Retry-After": String(limit.retryAfter) } },
+      );
+    const contentLength = Number(request.headers.get("content-length") || 0);
+    if (contentLength > 22 * 1024 * 1024)
       return error(
-        reserveError.message.includes("NO_CREDITS")
-          ? "You are out of StyleShift credits. Buy more credits to continue."
-          : "Unable to reserve a StyleShift credit.",
-        reserveError.message.includes("NO_CREDITS") ? 402 : 500,
+        "Images are too large. Keep the total upload under 20 MB.",
+        413,
       );
     const form = await request.formData();
     const original = form.get("original");
@@ -141,8 +162,20 @@ export async function POST(request: Request) {
     } catch {
       return error("Invalid visual choices.");
     }
-    if (!featureKeys.some((feature) => selected[feature]))
+    if (
+      featureKeys.some((feature) => typeof selected[feature] !== "boolean") ||
+      !featureKeys.some((feature) => selected[feature])
+    )
       return error("Choose at least one visual to copy.");
+    const { error: reserveError } = await updateCredit("reserve", user.id);
+    if (reserveError)
+      return error(
+        reserveError.message.includes("NO_CREDITS")
+          ? "You are out of Reframe credits. Buy more credits to continue."
+          : "Unable to reserve a Reframe credit.",
+        reserveError.message.includes("NO_CREDITS") ? 402 : 500,
+      );
+    reservedUserId = user.id;
     const prompt = await describeReference(reference, selected);
     const image = await createImageEdit(original, prompt);
     return NextResponse.json(
@@ -152,16 +185,14 @@ export async function POST(request: Request) {
   } catch (cause) {
     if (reservedUserId) {
       try {
-        await getSupabaseAdmin().rpc("refund_styleshift_credit", {
-          target_user_id: reservedUserId,
-        });
+        await updateCredit("refund", reservedUserId);
       } catch {
         /* Keep the original generation error. */
       }
     }
     const message =
       cause instanceof Error ? cause.message : "Unable to create your edit.";
-    console.error("StyleShift failure:", message);
+    console.error("Reframe failure:", message);
     return error(message, 500);
   }
 }

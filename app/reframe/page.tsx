@@ -2,10 +2,10 @@
 
 import { ChangeEvent, DragEvent, useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import Script from "next/script";
 import {
   Check,
   Download,
+  Maximize2,
   Loader2,
   Paintbrush,
   Sparkles,
@@ -13,9 +13,9 @@ import {
 } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
-import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/use-auth";
+import { AuthDialog } from "@/components/auth-dialog";
 
 type Feature = "pose" | "background" | "lighting" | "outfit";
 type PhotoType = "original" | "reference";
@@ -56,15 +56,7 @@ const valid = (file: File) =>
   ["image/jpeg", "image/png", "image/webp"].includes(file.type) &&
   file.size <= 10 * 1024 * 1024;
 
-const packs = [
-  { id: "poco", name: "Poco / Trial", price: 10, credits: 3 },
-  { id: "mini", name: "Mini", price: 29, credits: 11 },
-  { id: "standard", name: "Standard", price: 59, credits: 25 },
-  { id: "super", name: "Super", price: 99, credits: 45 },
-  { id: "mega", name: "Mega", price: 149, credits: 75 },
-] as const;
-
-export default function StyleShiftPage() {
+export default function ReframePage() {
   const [files, setFiles] = useState<Record<PhotoType, File | null>>({
     original: null,
     reference: null,
@@ -82,8 +74,8 @@ export default function StyleShiftPage() {
   const [result, setResult] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  const [credits, setCredits] = useState<number | null>(null);
-  const [paymentBusy, setPaymentBusy] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [loginOpen, setLoginOpen] = useState(false);
   const { user, loading: authLoading } = useAuth();
   const inputs = useRef<Record<PhotoType, HTMLInputElement | null>>({
     original: null,
@@ -97,18 +89,23 @@ export default function StyleShiftPage() {
   );
 
   useEffect(() => {
-    if (!user) return;
-    supabase.auth.getSession().then(({ data }) => {
-      if (!data.session) return;
-      fetch("/api/credits", {
-        headers: { Authorization: `Bearer ${data.session.access_token}` },
-      })
-        .then((response) => response.json())
-        .then((body) =>
-          setCredits(typeof body.credits === "number" ? body.credits : null),
-        );
-    });
-  }, [user]);
+    if (authLoading || user) return;
+    const timer = window.setTimeout(() => setLoginOpen(true), 0);
+    return () => window.clearTimeout(timer);
+  }, [authLoading, user]);
+
+  useEffect(() => {
+    if (!previewOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setPreviewOpen(false);
+    };
+    document.addEventListener("keydown", closeOnEscape);
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", closeOnEscape);
+      document.body.style.overflow = "";
+    };
+  }, [previewOpen]);
 
   function setPhoto(kind: PhotoType, file?: File) {
     if (!file) return;
@@ -130,7 +127,7 @@ export default function StyleShiftPage() {
     setPhoto(kind, event.dataTransfer.files[0]);
   }
 
-  async function styleShift() {
+  async function reframe() {
     if (!files.original || !files.reference) {
       setError("Add both your original and reference image first.");
       return;
@@ -149,7 +146,7 @@ export default function StyleShiftPage() {
     try {
       const session = (await supabase.auth.getSession()).data.session;
       if (!session) {
-        setError("Please sign in to use StyleShift.");
+        setError("Please sign in to use Reframe.");
         return;
       }
       const response = await fetch("/api/reframe", {
@@ -161,9 +158,6 @@ export default function StyleShiftPage() {
       if (!response.ok)
         throw new Error(body.error || "We could not create this edit.");
       setResult(body.image);
-      setCredits((current) =>
-        current === null ? current : Math.max(0, current - 1),
-      );
     } catch (cause) {
       setError(
         cause instanceof Error ? cause.message : "Something went wrong.",
@@ -173,133 +167,34 @@ export default function StyleShiftPage() {
     }
   }
 
-  async function buyCredits(packId: (typeof packs)[number]["id"]) {
-    const session = (await supabase.auth.getSession()).data.session;
-    if (!session) {
-      setError("Please sign in to buy credits.");
-      return;
-    }
-    setPaymentBusy(true);
-    setError("");
+  async function downloadResult() {
+    if (!result) return;
     try {
-      const selectedPack = packs.find((pack) => pack.id === packId)!;
-      const orderResponse = await fetch("/api/payments/create-order", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ pack: packId }),
-      });
-      const order = await orderResponse.json();
-      if (!orderResponse.ok)
-        throw new Error(order.error || "Unable to start payment.");
-      await new Promise<void>((resolve, reject) => {
-        const checkout = new window.Razorpay({
-          key: order.keyId,
-          amount: order.amount,
-          currency: "INR",
-          name: "RemixKit",
-          description: `${selectedPack.credits} StyleShift credits`,
-          order_id: order.orderId,
-          prefill: { email: user?.email || "" },
-          handler: async (payment: {
-            razorpay_order_id: string;
-            razorpay_payment_id: string;
-            razorpay_signature: string;
-          }) => {
-            const verifyResponse = await fetch("/api/payments/verify", {
-              method: "POST",
-              headers: {
-                Authorization: `Bearer ${session.access_token}`,
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                ...payment,
-                credits: selectedPack.credits,
-              }),
-            });
-            const verified = await verifyResponse.json();
-            if (!verifyResponse.ok) {
-              reject(
-                new Error(verified.error || "Payment verification failed."),
-              );
-              return;
-            }
-            setCredits(verified.credits);
-            resolve();
-          },
-          modal: { ondismiss: () => reject(new Error("Payment cancelled.")) },
-        });
-        checkout.on("payment.failed", () =>
-          reject(new Error("Payment failed. No credits were added.")),
-        );
-        checkout.open();
-      });
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Payment failed.");
-    } finally {
-      setPaymentBusy(false);
+      const response = await fetch(result);
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "remixkit-reframe.png";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      window.open(result, "_blank", "noopener,noreferrer");
     }
   }
 
   return (
     <div className="min-h-screen bg-neutral-50 selection:bg-violet-500 selection:text-white">
       <SiteHeader />
-      <Script
-        src="https://checkout.razorpay.com/v1/checkout.js"
-        strategy="afterInteractive"
-      />
       <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-14 lg:px-8 lg:py-16">
-        {!authLoading && !user && (
-          <section className="mx-auto mb-8 flex max-w-4xl flex-col items-center justify-between gap-4 rounded-2xl border border-violet-200 bg-violet-50 px-5 py-4 text-center sm:flex-row sm:text-left">
-            <div>
-              <strong className="block text-sm text-violet-900">
-                Sign in to use StyleShift
-              </strong>
-              <span className="text-sm text-violet-700">
-                Google sign-in includes 5 free credits.
-              </span>
-            </div>
-            <Link
-              href="/login"
-              className="rounded-full bg-neutral-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-neutral-700"
-            >
-              Sign in with Google
-            </Link>
-          </section>
-        )}
-        {user && (
-          <section className="mx-auto mb-8 flex max-w-4xl flex-col items-center justify-between gap-4 rounded-2xl border border-neutral-200 bg-white px-5 py-4 sm:flex-row">
-            <div>
-              <strong className="block text-sm text-neutral-900">
-                StyleShift credits: {credits ?? "..."}
-              </strong>
-              <span className="text-sm text-neutral-500">
-                One credit creates one image.
-              </span>
-            </div>
-            <div className="flex flex-wrap justify-center gap-2">
-              {packs.map((pack) => (
-                <button
-                  key={pack.id}
-                  type="button"
-                  disabled={paymentBusy}
-                  onClick={() => buyCredits(pack.id)}
-                  className="rounded-full border border-neutral-200 px-3 py-2 text-xs font-semibold text-neutral-700 hover:border-violet-300 hover:bg-violet-50 disabled:opacity-50"
-                >
-                  {pack.name} · ₹{pack.price}
-                </button>
-              ))}
-            </div>
-          </section>
-        )}
         <div className="mx-auto max-w-3xl text-center">
           <p className="section-label justify-center">
-            <Paintbrush className="h-4 w-4" /> StyleShift image editing
+            <Paintbrush className="h-4 w-4" /> Reframe image editing
           </p>
           <h1 className="mt-4 text-4xl font-bold tracking-tight text-neutral-900 sm:text-5xl lg:text-6xl">
-            StyleShift your image. Keep the you.
+            Reframe your image. Keep the you.
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-neutral-500 sm:text-lg">
             Upload your original and a reference image, choose the visual
@@ -393,7 +288,7 @@ export default function StyleShiftPage() {
               </p>
             </div>
           </div>
-          <div className="mt-6 grid gap-3 sm:grid-cols-2">
+          <div className="mt-6 grid grid-cols-2 gap-3">
             {options.map((option) => (
               <button
                 key={option.key}
@@ -405,10 +300,10 @@ export default function StyleShiftPage() {
                     [option.key]: !current[option.key],
                   }))
                 }
-                className={`flex items-center gap-3 rounded-2xl border p-4 text-left transition-all ${selected[option.key] ? "border-violet-300 bg-violet-700 text-white shadow-md shadow-violet-600/20" : "border-neutral-200 bg-white hover:border-neutral-300 hover:bg-neutral-50"}`}
+                className={`flex min-h-[72px] items-center gap-2 rounded-lg border p-3 text-left transition-all sm:gap-3 sm:p-4 ${selected[option.key] ? "border-teal-300 bg-teal-800 text-white shadow-md shadow-teal-600/20" : "border-neutral-200 bg-white hover:border-neutral-300 hover:bg-neutral-50"}`}
               >
                 <span
-                  className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-lg ${selected[option.key] ? "bg-white/20 ring-1 ring-white/30" : "bg-neutral-100"}`}
+                  className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-base sm:h-9 sm:w-9 ${selected[option.key] ? "bg-white/20 ring-1 ring-white/30" : "bg-neutral-100"}`}
                 >
                   {selected[option.key] ? (
                     <Check className="h-5 w-5" />
@@ -417,15 +312,11 @@ export default function StyleShiftPage() {
                   )}
                 </span>
                 <span>
-                  <strong className="block text-sm font-semibold">
+                  <strong className="block text-xs font-semibold leading-4 sm:text-sm">
                     {option.label}
                   </strong>
                   <small
-                    className={
-                      selected[option.key]
-                        ? "text-violet-100"
-                        : "text-neutral-500"
-                    }
+                    className={`hidden text-xs leading-5 sm:block ${selected[option.key] ? "text-teal-100" : "text-neutral-500"}`}
                   >
                     {option.detail}
                   </small>
@@ -444,47 +335,100 @@ export default function StyleShiftPage() {
           <button
             type="button"
             disabled={busy}
-            onClick={styleShift}
-            className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-neutral-900 py-4 text-sm font-bold text-white shadow-lg transition hover:bg-neutral-700 disabled:cursor-wait disabled:bg-neutral-700"
+            onClick={reframe}
+            className="group relative mt-6 flex w-full items-center justify-center gap-2 overflow-hidden rounded-2xl bg-neutral-900 py-4 text-sm font-bold text-white shadow-lg transition hover:bg-neutral-700 disabled:cursor-wait disabled:bg-neutral-700"
           >
-            {busy ? (
-              <Loader2 className="h-5 w-5 animate-spin" />
-            ) : (
-              <Sparkles className="h-5 w-5" />
+            {busy && (
+              <span className="pointer-events-none absolute inset-0 animate-shimmer bg-gradient-to-r from-transparent via-white/15 to-transparent" />
             )}
-            {busy ? "Creating your edit..." : "Create my edit"}
+            {busy ? (
+              <Loader2 className="relative h-5 w-5 animate-spin" />
+            ) : (
+              <Sparkles className="relative h-5 w-5 transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110" />
+            )}
+            <span className="relative">
+              {busy ? "Creating your edit..." : "Create my edit"}
+            </span>
           </button>
         </section>
 
         {result && (
-          <section className="mx-auto mt-8 max-w-4xl overflow-hidden rounded-3xl border border-neutral-200 bg-white shadow-sm">
+          <section className="animate-fade-up mx-auto mt-8 max-w-4xl overflow-hidden rounded-3xl border border-neutral-200 bg-white shadow-sm">
             <div className="flex items-center justify-between gap-4 border-b border-neutral-100 px-5 py-4 sm:px-7">
               <div>
-                <p className="section-label">Your StyleShift image</p>
-                <h2 className="mt-1 text-xl font-bold text-neutral-900">
-                  Made for your point of view.
-                </h2>
+                <p className="section-label">Your Reframe image</p>
               </div>
-              <a
-                href={result}
-                download="remixkit-styleshift.png"
+              <button
+                type="button"
+                onClick={downloadResult}
                 className="inline-flex shrink-0 items-center gap-2 rounded-full bg-neutral-900 px-4 py-2.5 text-xs font-semibold text-white hover:bg-neutral-700"
               >
                 <Download className="h-4 w-4" /> Download
-              </a>
+              </button>
             </div>
-            <div className="relative min-h-[240px] w-full max-h-[720px] aspect-video">
+            <button
+              type="button"
+              onClick={() => setPreviewOpen(true)}
+              className="group relative block min-h-[240px] w-full bg-neutral-100 p-3 sm:p-5"
+              aria-label="View generated Reframe image full screen"
+            >
               <Image
                 src={result}
-                alt="Generated StyleShift edit"
-                fill
+                alt="Generated Reframe edit"
+                width={1536}
+                height={1024}
                 unoptimized
-                className="object-contain"
+                className="mx-auto max-h-[720px] w-full object-contain transition-transform duration-500 group-hover:scale-[1.01]"
               />
-            </div>
+              <span className="absolute bottom-5 right-5 inline-flex items-center gap-2 rounded-full bg-neutral-950/80 px-3 py-2 text-xs font-semibold text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
+                <Maximize2 className="h-3.5 w-3.5" /> View full image
+              </span>
+            </button>
           </section>
         )}
       </main>
+      {previewOpen && result && (
+        <div
+          className="fixed inset-0 z-[80] flex items-center justify-center bg-neutral-950/90 p-4 backdrop-blur-md sm:p-8"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Generated Reframe image"
+          onMouseDown={(event) => {
+            if (event.currentTarget === event.target) setPreviewOpen(false);
+          }}
+        >
+          <div className="relative flex h-full w-full max-w-6xl flex-col items-center justify-center gap-4">
+            <div className="flex w-full items-center justify-between text-white">
+              <p className="text-sm font-semibold">Your Reframe image</p>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={downloadResult}
+                  className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-xs font-bold text-neutral-900 transition hover:bg-neutral-200"
+                >
+                  <Download className="h-4 w-4" /> Download
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPreviewOpen(false)}
+                  className="rounded-full bg-white/10 px-4 py-2 text-xs font-semibold text-white transition hover:bg-white/20"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+            <Image
+              src={result}
+              alt="Generated Reframe edit full screen"
+              width={2048}
+              height={1536}
+              unoptimized
+              className="max-h-[calc(100vh-9rem)] w-auto max-w-full rounded-xl object-contain shadow-2xl"
+            />
+          </div>
+        </div>
+      )}
+      <AuthDialog open={loginOpen} onOpenChange={setLoginOpen} />
       <SiteFooter />
     </div>
   );

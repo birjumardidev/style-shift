@@ -41,7 +41,7 @@ export default function LoginPage() {
           Welcome back
         </h1>
         <p className="mt-3 text-sm leading-6 text-neutral-500">
-          Sign in to use StyleShift and receive 5 free credits.
+          Sign in to use Reframe and receive 5 free credits.
         </p>
         <button
           type="button"
