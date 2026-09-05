@@ -4,7 +4,18 @@ const siteUrl = (
   process.env.NEXT_PUBLIC_SITE_URL || "https://www.remixkit.in"
 ).replace(/\/$/, "");
 
-const staticPages = ["", "prompts", "library", "generate", "reframe"];
+const publicPages = [
+  "",
+  "prompts",
+  "library",
+  "generate",
+  "reframe",
+  "credits",
+  "terms",
+  "privacy",
+  "refund-policy",
+  "contact",
+];
 
 const promptPages = [
   "change-background/office",
@@ -23,24 +34,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const currentDate = new Date();
 
   // Root & Static Pages
-  const staticUrls = staticPages.map((path) => ({
+  const staticUrls = publicPages.map((path) => ({
     url: path ? `${siteUrl}/${path}` : siteUrl,
     lastModified: currentDate,
     changeFrequency: "daily" as const,
     priority: 1.0,
-  }));
-
-  // Prompt category pages
-  const categoryUrls = [
-    "change-background",
-    "portrait-enhancement",
-    "remove-elements",
-    "creative-mood",
-  ].map((category) => ({
-    url: `${siteUrl}/prompts/${category}`,
-    lastModified: currentDate,
-    changeFrequency: "weekly" as const,
-    priority: 0.8,
   }));
 
   // Individual prompt pages
@@ -51,5 +49,5 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.7,
   }));
 
-  return [...staticUrls, ...categoryUrls, ...promptUrls];
+  return [...staticUrls, ...promptUrls];
 }

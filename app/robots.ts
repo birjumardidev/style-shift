@@ -9,7 +9,7 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: "/admin/", // Optional: block crawlers from admin routes
+      disallow: ["/admin", "/api", "/auth/callback", "/login"],
     },
     sitemap: `${siteUrl}/sitemap.xml`,
     host: siteUrl.replace(/^https?:\/\//, ""),

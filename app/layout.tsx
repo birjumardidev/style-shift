@@ -21,7 +21,7 @@ export const metadata: Metadata = {
     template: "%s | RemixKit",
   },
   description:
-    "Discover, copy, and publish trending AI image editing prompts, or upload photos to generate detailed prompts for Flux, Midjourney, and Nano Banana.",
+    "Create AI image prompts from visual references, reframe images with AI, explore curated prompt ideas, and buy secure Reframe credits.",
   keywords: [
     "AI image prompts",
     "image to prompt generator",
@@ -34,7 +34,9 @@ export const metadata: Metadata = {
     "AI image prompt generator",
     "AI prompts",
     "AI image editing prompts",
-    "Media io",
+    "Reframe image editing",
+    "AI image generator credits",
+    "Razorpay image editing",
   ],
   authors: [{ name: "RemixKit Team" }],
   creator: "RemixKit",
@@ -56,7 +58,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "RemixKit — AI Image Editing Prompts & Generator",
     description:
-      "Discover trending AI image editing prompts or generate prompts directly from your images.",
+      "Generate prompts from images, explore curated styles, and reframe visual details with RemixKit.",
     url: siteUrl,
     siteName: "RemixKit",
     locale: "en_US",
