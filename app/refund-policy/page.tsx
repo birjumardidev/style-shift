@@ -19,7 +19,7 @@ export default function RefundPolicyPage() {
           <p className="mt-3 text-sm text-neutral-500">
             Last updated: September 5, 2026
           </p>
-          <div className="prose prose-neutral mt-10 max-w-none text-sm leading-7">
+          <div className="legal-content mt-10 max-w-none">
             <h2>1. Digital credits</h2>
             <p>
               RemixKit credit packs provide digital usage credits for our image
@@ -43,14 +43,15 @@ export default function RefundPolicyPage() {
             <h2>4. Requesting a refund</h2>
             <p>
               Send the payment ID, order ID, account email, and a short
-              explanation through our <a href="/contact">Contact Us</a> page. We
-              may request additional information to verify the transaction.
+              explanation through our <a href="/contact">Contact Us</a> page or
+              email mardib776@gmail.com. We may request additional information
+              to verify the transaction.
             </p>
             <h2>5. Processing</h2>
             <p>
-              Approved refunds are sent to the original payment method through
-              the payment provider. Processing time depends on the provider and
-              the customer&apos;s bank.
+              Approved refunds are processed within 5-7 business days to the
+              original payment method through the payment provider. The time for
+              the funds to appear may also depend on the customer&apos;s bank.
             </p>
           </div>
         </article>

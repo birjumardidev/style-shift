@@ -4,7 +4,7 @@ import { jakarta } from "@/lib/fonts";
 import { Analytics } from "@vercel/analytics/react";
 
 const siteUrl = (
-  process.env.NEXT_PUBLIC_SITE_URL || "https://www.remixkit.in"
+  process.env.NEXT_PUBLIC_SITE_URL || "https://remixkit.in"
 ).replace(/\/$/, "");
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 let supabaseHost: string | undefined;
@@ -16,12 +16,13 @@ try {
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
+  applicationName: "RemixKit",
   title: {
     default: "RemixKit — AI Image Editing Prompts & Image to Prompt Generator",
     template: "%s | RemixKit",
   },
   description:
-    "Create AI image prompts from visual references, reframe images with AI, explore curated prompt ideas, and buy secure Reframe credits.",
+    "Turn visual references into detailed AI prompts, explore curated image styles, and reframe images with RemixKit.",
   keywords: [
     "AI image prompts",
     "image to prompt generator",
@@ -41,8 +42,9 @@ export const metadata: Metadata = {
   authors: [{ name: "RemixKit Team" }],
   creator: "RemixKit",
   publisher: "RemixKit",
-  alternates: {
-    canonical: siteUrl,
+  category: "technology",
+  formatDetection: {
+    telephone: false,
   },
   robots: {
     index: true,
@@ -59,17 +61,17 @@ export const metadata: Metadata = {
     title: "RemixKit — AI Image Editing Prompts & Generator",
     description:
       "Generate prompts from images, explore curated styles, and reframe visual details with RemixKit.",
-    url: siteUrl,
     siteName: "RemixKit",
     locale: "en_US",
     type: "website",
+    images: ["/opengraph-image"],
   },
   twitter: {
     card: "summary_large_image",
     title: "RemixKit — AI Image Editing Prompts & Generator",
     description:
       "Discover trending AI image editing prompts or generate prompts directly from your images.",
-    images: ["https://www.remixkit.in/opengraph-image"],
+    images: [`${siteUrl}/opengraph-image`],
   },
   icons: {
     icon: [

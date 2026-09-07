@@ -145,10 +145,10 @@ export default function CreditsPage() {
           {packs.map((pack, index) => (
             <section
               key={pack.id}
-              className={`flex flex-col rounded-3xl border bg-white p-6 shadow-sm ${index === 2 ? "border-violet-400 ring-2 ring-violet-100" : "border-neutral-200"}`}
+              className={`relative flex flex-col rounded-3xl border bg-white p-6 shadow-sm ${index === 2 ? "border-violet-400 ring-2 ring-violet-100" : "border-neutral-200"}`}
             >
               {index === 2 && (
-                <span className="mb-3 w-fit rounded-full bg-violet-100 px-2.5 py-1 text-[10px] font-bold tracking-[0.14em] text-violet-700">
+                <span className="absolute right-6 top-6 rounded-full bg-violet-100 px-2.5 py-1 text-[10px] font-bold tracking-[0.14em] text-violet-700">
                   MOST POPULAR
                 </span>
               )}
@@ -174,19 +174,19 @@ export default function CreditsPage() {
                 {paymentBusy === pack.id ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : null}
-                {paymentUnavailable ? "Coming soon" : "Buy pack"}
+                {paymentUnavailable ? "Purchases unavailable" : "Buy pack"}
               </button>
             </section>
           ))}
         </div>
         <div className="mt-5 flex flex-col items-center justify-center gap-1 text-center text-xs text-neutral-500 sm:flex-row sm:gap-5">
-          <span>Credits added instantly via UPI</span>
+          <span>Secure credit purchases are coming soon.</span>
           <span>1 Credit = 1 Image Generation.</span>
         </div>
         {paymentUnavailable && (
           <p className="mx-auto mt-5 max-w-2xl rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-center text-sm text-amber-800">
-            Online payments are temporarily unavailable. No payment was created
-            and no credits were charged.
+            Credit purchases are temporarily unavailable while we prepare secure
+            payments. No payment was created and no credits were charged.
           </p>
         )}
         {error && (

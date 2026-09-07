@@ -4,7 +4,7 @@ import { Wand2 } from "lucide-react";
 export function SiteFooter() {
   return (
     <footer className="border-t border-neutral-800 bg-neutral-950 text-neutral-400 mt-20">
-      <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:max-w-7xl xl:max-w-[1380px] lg:px-8 lg:py-16">
+      <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-12 lg:max-w-7xl xl:max-w-[1380px] lg:px-8 lg:py-16">
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4 lg:gap-12">
           {/* Column 1: Brand */}
           <div>
@@ -111,14 +111,20 @@ export function SiteFooter() {
               </li>
               <li className="text-neutral-400">Keep credits in one account</li>
             </ul>
+            <a
+              href="mailto:mardib776@gmail.com"
+              className="mt-4 inline-block text-xs text-neutral-400 transition hover:text-white sm:text-sm"
+            >
+              mardib776@gmail.com
+            </a>
           </div>
         </div>
 
-        <div className="mt-10 flex flex-col items-center justify-between gap-3 border-t border-neutral-800/80 pt-6 text-xs sm:text-sm sm:flex-row lg:mt-14">
-          <p className="text-neutral-500">
+        <div className="mt-8 flex flex-col items-center justify-between gap-4 border-t border-neutral-800/80 pt-5 text-xs sm:mt-10 sm:gap-3 sm:text-sm sm:flex-row lg:mt-14 lg:pt-6">
+          <p className="text-center text-neutral-500 sm:text-left">
             © {new Date().getFullYear()} RemixKit. All rights reserved.
           </p>
-          <div className="flex items-center gap-4 text-neutral-500">
+          <div className="flex max-w-full flex-wrap items-center justify-center gap-x-3 gap-y-2 text-neutral-500 sm:gap-x-4">
             <Link href="/library" className="hover:text-neutral-300">
               Library
             </Link>

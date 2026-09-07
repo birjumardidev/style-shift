@@ -19,7 +19,7 @@ export default function PrivacyPage() {
           <p className="mt-3 text-sm text-neutral-500">
             Last updated: September 5, 2026
           </p>
-          <div className="prose prose-neutral mt-10 max-w-none text-sm leading-7">
+          <div className="legal-content mt-10 max-w-none">
             <h2>1. Information we collect</h2>
             <p>
               When you sign in, we receive account information provided by your

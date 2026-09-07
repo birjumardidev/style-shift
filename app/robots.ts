@@ -1,7 +1,7 @@
 import { MetadataRoute } from "next";
 
 const siteUrl = (
-  process.env.NEXT_PUBLIC_SITE_URL || "https://www.remixkit.in"
+  process.env.NEXT_PUBLIC_SITE_URL || "https://remixkit.in"
 ).replace(/\/$/, "");
 
 export default function robots(): MetadataRoute.Robots {

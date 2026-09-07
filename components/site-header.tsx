@@ -50,7 +50,7 @@ export function SiteHeader() {
   const initials = name.slice(0, 2).toUpperCase();
 
   return (
-    <header className="sticky top-0 z-40 border-b border-neutral-200/60 bg-white/90 backdrop-blur-xl">
+    <header className="sticky top-0 z-40 w-full border-b border-neutral-200/60 bg-white/90 backdrop-blur-xl">
       <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8 xl:px-12 lg:py-4">
         {/* Logo */}
         <Link
@@ -68,7 +68,7 @@ export function SiteHeader() {
 
         {/* Desktop nav */}
         <nav
-          className="hidden items-center gap-1.5 sm:flex lg:gap-2"
+          className="hidden items-center gap-1.5 lg:flex lg:gap-2"
           aria-label="Main navigation"
         >
           {links.map((link) => (
@@ -84,7 +84,7 @@ export function SiteHeader() {
 
         {/* Account / CTA */}
         {!loading && user ? (
-          <div className="relative hidden sm:block">
+          <div className="relative hidden lg:block">
             <button
               type="button"
               onClick={() => setProfileOpen((current) => !current)}
@@ -153,7 +153,7 @@ export function SiteHeader() {
           <button
             type="button"
             onClick={() => setLoginOpen(true)}
-            className="hidden sm:inline-flex items-center gap-2 rounded-full bg-neutral-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-neutral-700 lg:px-6 lg:py-3"
+            className="hidden lg:inline-flex items-center gap-2 rounded-full bg-neutral-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-neutral-700 lg:px-6 lg:py-3"
           >
             <LogIn className="h-4 w-4" /> Sign in
           </button>
@@ -162,7 +162,7 @@ export function SiteHeader() {
         {/* Mobile toggle */}
         <button
           type="button"
-          className="flex h-9 w-9 items-center justify-center rounded-xl border border-neutral-200 bg-white text-neutral-700 shadow-sm transition-all duration-200 hover:bg-neutral-50 sm:hidden"
+          className="flex h-9 w-9 items-center justify-center rounded-xl border border-neutral-200 bg-white text-neutral-700 shadow-sm transition-all duration-200 hover:bg-neutral-50 lg:hidden"
           aria-label="Open navigation"
           aria-expanded={open}
           onClick={() => setOpen(!open)}
@@ -178,7 +178,7 @@ export function SiteHeader() {
       {/* Mobile menu */}
       {open && (
         <nav
-          className="border-t border-neutral-100 bg-white/95 backdrop-blur-xl px-4 pb-4 pt-3 sm:hidden"
+          className="border-t border-neutral-100 bg-white/95 px-4 pb-4 pt-3 backdrop-blur-xl lg:hidden"
           aria-label="Mobile navigation"
         >
           <div className="space-y-1">
