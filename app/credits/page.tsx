@@ -20,7 +20,9 @@ const packs = [
 export default function CreditsPage() {
   const { user, loading: authLoading } = useAuth();
   const [credits, setCredits] = useState<number | null>(null);
-  const [paymentBusy, setPaymentBusy] = useState(false);
+  const [paymentBusy, setPaymentBusy] = useState<
+    (typeof packs)[number]["id"] | null
+  >(null);
   const [paymentUnavailable, setPaymentUnavailable] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
   const [error, setError] = useState("");
@@ -51,7 +53,7 @@ export default function CreditsPage() {
       setLoginOpen(true);
       return;
     }
-    setPaymentBusy(true);
+    setPaymentBusy(packId);
     setError("");
     try {
       const selectedPack = packs.find((pack) => pack.id === packId)!;
@@ -112,7 +114,7 @@ export default function CreditsPage() {
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Payment failed.");
     } finally {
-      setPaymentBusy(false);
+      setPaymentBusy(null);
     }
   }
 
@@ -165,11 +167,11 @@ export default function CreditsPage() {
               </p>
               <button
                 type="button"
-                disabled={paymentBusy || !user || paymentUnavailable}
+                disabled={paymentBusy !== null || !user || paymentUnavailable}
                 onClick={() => buyCredits(pack.id)}
                 className="mt-7 flex items-center justify-center gap-2 rounded-2xl bg-neutral-900 py-3 text-sm font-bold text-white transition hover:bg-neutral-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {paymentBusy ? (
+                {paymentBusy === pack.id ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : null}
                 {paymentUnavailable ? "Coming soon" : "Buy pack"}
