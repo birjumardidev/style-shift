@@ -3,7 +3,8 @@ import { NextRequest, NextResponse } from "next/server";
 const previewCookieName = "remixkit-admin-preview";
 
 function isMaintenanceModeEnabled() {
-  return process.env.MAINTENANCE_MODE === "true";
+  // Keep the live site private unless maintenance is explicitly disabled.
+  return process.env.MAINTENANCE_MODE !== "false";
 }
 
 function hasAdminPreview(request: NextRequest) {
